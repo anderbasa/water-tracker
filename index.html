@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#eef6ff" media="(prefers-color-scheme: light)" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Agua" />
+<title>Mi registro de agua</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<header class="app-header">
+  <h1>Mi agua</h1>
+  <p id="dateLabel" class="date-label"></p>
+</header>
+
+<main>
+  <!-- ================= HOY ================= -->
+  <section id="view-today" class="view is-active">
+    <div class="bottle-wrap">
+      <svg class="bottle" viewBox="0 0 200 340" role="img" aria-labelledby="bottleTitle">
+        <title id="bottleTitle">Progreso de hidratación de hoy</title>
+        <defs>
+          <clipPath id="bottleClip">
+            <path d="M70 20 h60 a6 6 0 0 1 6 6 v16 a10 10 0 0 0 3 7 l14 14 a34 34 0 0 1 10 24 v210 a30 30 0 0 1 -30 30 h-86 a30 30 0 0 1 -30 -30 v-210 a34 34 0 0 1 10 -24 l14 -14 a10 10 0 0 0 3 -7 v-16 a6 6 0 0 1 6 -6 z" />
+          </clipPath>
+          <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="var(--water-top)" />
+            <stop offset="1" stop-color="var(--water-bottom)" />
+          </linearGradient>
+        </defs>
+
+        <g clip-path="url(#bottleClip)">
+          <rect x="0" y="0" width="200" height="340" fill="var(--bottle-fill)" />
+          <g id="waterGroup">
+            <path id="waterWaveBack" fill="var(--water-bottom)" opacity="0.55" />
+            <path id="waterWave" fill="url(#waterGrad)" />
+          </g>
+        </g>
+        <path class="bottle-outline" d="M70 20 h60 a6 6 0 0 1 6 6 v16 a10 10 0 0 0 3 7 l14 14 a34 34 0 0 1 10 24 v210 a30 30 0 0 1 -30 30 h-86 a30 30 0 0 1 -30 -30 v-210 a34 34 0 0 1 10 -24 l14 -14 a10 10 0 0 0 3 -7 v-16 a6 6 0 0 1 6 -6 z" />
+      </svg>
+
+      <div class="bottle-readout">
+        <span id="todayTotal" class="today-total">0 ml</span>
+        <span id="todayGoal" class="today-goal">de 2000 ml</span>
+        <span id="todayPct" class="today-pct">0%</span>
+      </div>
+    </div>
+
+    <div class="quick-add" id="quickAdd"></div>
+
+    <button class="link-btn" id="customAddBtn" type="button">Otra cantidad…</button>
+
+    <h2 class="section-title">Hoy has bebido</h2>
+    <ul id="entryList" class="entry-list"></ul>
+    <p id="entryEmpty" class="empty-note">Todavía no hay registros. Toca la pegatina NFC o usa los botones de arriba.</p>
+  </section>
+
+  <!-- ================= HISTORIAL ================= -->
+  <section id="view-history" class="view">
+    <div class="range-tabs" id="rangeTabs">
+      <button data-range="week" class="is-active" type="button">Semana</button>
+      <button data-range="month" type="button">Mes</button>
+      <button data-range="year" type="button">Año</button>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><span id="statAvg" class="stat-value">–</span><span class="stat-label">Media / día</span></div>
+      <div class="stat"><span id="statGoalDays" class="stat-value">–</span><span class="stat-label">Días con objetivo</span></div>
+      <div class="stat"><span id="statStreak" class="stat-value">–</span><span class="stat-label">Racha actual</span></div>
+    </div>
+
+    <div class="chart-card">
+      <svg id="barChart" class="bar-chart" viewBox="0 0 320 180" preserveAspectRatio="none" role="img" aria-label="Gráfico de agua bebida"></svg>
+      <div id="chartLabels" class="chart-labels"></div>
+    </div>
+
+    <button class="link-btn danger" id="wipeBtn" type="button">Borrar todos los datos</button>
+  </section>
+
+  <!-- ================= AJUSTES ================= -->
+  <section id="view-settings" class="view">
+    <label class="field">
+      <span>Objetivo diario (ml)</span>
+      <input id="setGoal" type="number" min="200" step="50" inputmode="numeric" />
+    </label>
+
+    <label class="field">
+      <span>Cantidades rápidas (ml, separadas por comas)</span>
+      <input id="setQuick" type="text" inputmode="numeric" placeholder="200, 330, 500" />
+    </label>
+
+    <label class="field">
+      <span>Cantidad del vaso NFC (ml)</span>
+      <input id="setGlass" type="number" min="50" step="10" inputmode="numeric" />
+      <small>Se usa cuando la pegatina lleva <code>?add=glass</code>.</small>
+    </label>
+
+    <div class="field">
+      <span>Copia de seguridad</span>
+      <div class="btn-pair">
+        <button id="exportBtn" class="btn" type="button">Exportar datos</button>
+        <button id="importBtn" class="btn" type="button">Importar datos</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden />
+      </div>
+      <small>Guarda el archivo en un sitio seguro. Los datos viven solo en este móvil.</small>
+    </div>
+
+    <div class="field">
+      <span>Tu pegatina NFC</span>
+      <p class="nfc-url">Graba esta URL en el tag:</p>
+      <code id="nfcUrlGlass" class="nfc-code"></code>
+      <p class="nfc-url">O para una cantidad fija (ej. 500 ml):</p>
+      <code id="nfcUrlFixed" class="nfc-code"></code>
+    </div>
+
+    <p class="version-note">Mi registro de agua · v1 · datos locales</p>
+  </section>
+</main>
+
+<nav class="tabbar">
+  <button data-view="today" class="is-active" type="button"><span class="tab-ico">💧</span>Hoy</button>
+  <button data-view="history" type="button"><span class="tab-ico">📊</span>Historial</button>
+  <button data-view="settings" type="button"><span class="tab-ico">⚙️</span>Ajustes</button>
+</nav>
+
+<!-- Modal cantidad personalizada -->
+<dialog id="customDialog" class="dialog">
+  <form method="dialog">
+    <h3>Añadir cantidad</h3>
+    <input id="customAmount" type="number" min="1" step="10" inputmode="numeric" placeholder="ml" autofocus />
+    <menu>
+      <button value="cancel" class="btn ghost">Cancelar</button>
+      <button id="customConfirm" value="ok" class="btn">Añadir</button>
+    </menu>
+  </form>
+</dialog>
+
+<script src="js/store.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
