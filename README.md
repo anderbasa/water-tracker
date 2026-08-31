@@ -30,39 +30,59 @@ para que el móvil descargue la versión nueva.
 
 ## 2. Preparar la pegatina NFC
 
-El iPhone (XS o posterior) lee tags NFC en segundo plano sin abrir ninguna app:
-al acercar el móvil aparece una notificación que abre la URL grabada en el tag.
+La app registra el agua cuando se abre con un parámetro en la URL:
 
-**Para grabar la URL en la pegatina necesitas una app** (el iPhone lee tags, pero
-no los graba de fábrica). Gratis y estándar:
+| URL a abrir | Qué hace |
+| --- | --- |
+| `https://TU_USUARIO.github.io/water-tracker/?add=glass` | Suma la "cantidad del vaso NFC" de **Ajustes** (250 ml por defecto). |
+| `https://TU_USUARIO.github.io/water-tracker/?add=500` | Suma 500 ml fijos (cambia el número). |
 
-- **NFC Tools** (wakdev) — App Store.
+Al registrarse se muestra una confirmación grande (cantidad + total del día +
+barra de progreso) y se limpia el parámetro de la URL, así que **recargar nunca
+vuelve a contar**. Un segundo toque accidental en menos de 8 s también se ignora.
 
-Pasos con NFC Tools:
+### Opción A — App Atajos (recomendada en iPhone)
 
-1. Abre NFC Tools → **Escribir** → **Añadir un registro** → **URL / URI**.
-2. Escribe la URL de tu app con el parámetro de cantidad:
-   - `https://TU_USUARIO.github.io/water-tracker/?add=glass`
-     → suma la "cantidad del vaso NFC" que tengas en Ajustes (250 ml por defecto).
-   - `https://TU_USUARIO.github.io/water-tracker/?add=500`
-     → suma siempre 500 ml (cambia el número por el tamaño de tu botella/vaso).
-3. **Escribir** y acerca la pegatina. Listo.
-4. Pega la pegatina en la botella y prueba: acércale el iPhone → toca la
-   notificación → se registra el agua y ves el resumen.
+Con Atajos la pegatina se queda **en blanco**: no grabas nada en ella, solo la
+usas como "disparador".
 
-Las URL exactas para tu instalación también aparecen en la pantalla **Ajustes**
-de la app (puedes copiarlas desde ahí).
+1. App **Atajos** → pestaña **Automatización** → **+** → **Crear automatización
+   personal** → **NFC**.
+2. **Escanear** → acerca el iPhone a la pegatina y ponle un nombre (ej. "Agua").
+3. Acción: **Abrir URL** (o "Obtener contenido de URL" no; usa **Abrir URLs**).
+   Pega: `https://TU_USUARIO.github.io/water-tracker/?add=glass`
+4. Siguiente → **desactiva "Preguntar antes de ejecutar"** y confirma. (En iOS
+   16.4+ puedes además desactivar "Notificar al ejecutar" para que sea 100%
+   silencioso.)
+5. Listo. Pega la pegatina en la botella y toca: se abre la app, registra y
+   enseña la confirmación.
 
-> Si un día tocas el tag dos veces sin querer, la app ignora el segundo toque si
-> ocurre en los 8 segundos siguientes. Y recargar la página nunca vuelve a
-> contar, porque el parámetro se borra de la URL al registrarse.
+> Truco: si quieres elegir cantidad con un solo tag, añade antes de "Abrir URL"
+> la acción **Elegir de un menú** (200 / 330 / 500) y construye la URL con la
+> opción elegida.
+
+### Opción B — App NFC Tools (graba la URL en el tag)
+
+1. Instala **NFC Tools** (wakdev, gratis) → **Escribir** → **Añadir un
+   registro** → **URL/URI**.
+2. Pega `https://TU_USUARIO.github.io/water-tracker/?add=glass` → **Escribir** y
+   acerca la pegatina.
+3. Al tocar el tag, el iPhone muestra una notificación; tócala y se abre la app.
+
+Las URL exactas para tu instalación aparecen también en **Ajustes** (para copiarlas).
 
 ---
 
 ## 3. Usarla
 
-- Abre la app en Safari y pulsa **Compartir → Añadir a pantalla de inicio**. Así
-  se abre a pantalla completa y funciona sin conexión.
+> **Importante en iPhone:** al tocar la pegatina NFC, la URL **siempre se abre en
+> Safari**, nunca en un icono de "pantalla de inicio". Además, en iOS una web
+> añadida a la pantalla de inicio guarda sus datos **por separado** de Safari.
+> Para que todo cuente en el mismo sitio, **usa la app dentro de Safari**: ábrela
+> una vez, añádela a **Favoritos** o dejala fija en un grupo de pestañas. No hace
+> falta instalarla. (Si algún día quieres sincronizar entre varios dispositivos,
+> habría que añadir un backend; ver más abajo.)
+
 - **Hoy:** la botella se llena según lo que llevas bebido. Botones de cantidades
   rápidas y "Otra cantidad…" para añadir a mano. Cada toma se puede borrar.
 - **Historial:** barras por día (semana/mes) o por mes (año). Verde = día en que
@@ -109,8 +129,15 @@ tools/make-icons.js         generador de iconos PNG
 tools/serve.js              servidor estático para desarrollo
 ```
 
-## Aviso
+## Aviso sobre los datos
 
-Los datos viven en el navegador de un único dispositivo. Si borras los datos de
-Safari, cambias de móvil o desinstalas, se pierden salvo que tengas una copia
-exportada. Haz backup de vez en cuando desde **Ajustes → Exportar datos**.
+Los datos viven en Safari de un único dispositivo. Si borras los datos de Safari
+o cambias de móvil, se pierden salvo que tengas una copia exportada. Haz backup
+de vez en cuando desde **Ajustes → Exportar datos**.
+
+### Si más adelante quieres sincronización entre dispositivos
+
+Habría que añadir un backend ligero (por ejemplo Supabase, plan gratuito) y
+guardar las tomas ahí en lugar de en `localStorage`. El punto de cambio está
+aislado en [`js/store.js`](js/store.js): bastaría con reimplementar `addEntry`,
+`removeEntry` y la carga inicial contra una API, sin tocar el resto de la app.

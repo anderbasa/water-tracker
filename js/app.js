@@ -16,7 +16,7 @@
   function handleUrlIntake() {
     const params = new URLSearchParams(location.search);
     const raw = params.get('add');
-    if (raw == null) return;
+    if (raw == null) return null;
 
     // Anti–doble conteo: mismo valor tocado hace < 8 s se ignora.
     const sig = `${raw}`;
@@ -30,24 +30,45 @@
     // limpia la URL siempre
     history.replaceState(null, '', location.pathname);
 
-    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (!Number.isFinite(amount) || amount <= 0) return null;
 
     if (last) {
       const [lsig, lts] = last.split('|');
       if (lsig === sig && now - Number(lts) < 8000) {
-        toast('Ya contado hace un momento 👍');
-        return;
+        return { duplicate: true };
       }
     }
     sessionStorage.setItem('lastAdd', `${sig}|${now}`);
 
     const entry = Store.addEntry(amount);
-    if (entry) {
-      const total = Store.totalForDay();
-      const goal = Store.settings.dailyGoalMl;
-      toast(`+${fmt(amount)} · llevas ${fmt(total)} de ${fmt(goal)}`);
-      pulseBottle();
+    if (!entry) return null;
+    return { amount, total: Store.totalForDay(), goal: Store.settings.dailyGoalMl };
+  }
+
+  /* pantalla de confirmación grande tras tocar la pegatina */
+  function showNfcConfirm(info) {
+    const box = $('#nfcConfirm');
+    if (info.duplicate) {
+      toast('Ya contado hace un momento 👍');
+      return;
     }
+    const pct = info.goal > 0 ? Math.round((info.total / info.goal) * 100) : 0;
+    $('#ncAmt').textContent = `+${fmt(info.amount)}`;
+    $('#ncTotal').textContent = `Hoy llevas ${fmt(info.total)} de ${fmt(info.goal)}`;
+    $('#ncBar').style.width = Math.min(100, pct) + '%';
+    $('#ncPct').textContent = pct + '%';
+    box.hidden = false;
+    requestAnimationFrame(() => box.classList.add('show'));
+    pulseBottle();
+
+    const close = () => {
+      box.classList.remove('show');
+      setTimeout(() => { box.hidden = true; }, 300);
+      clearTimeout(box._t);
+      box.removeEventListener('click', close);
+    };
+    box.addEventListener('click', close);
+    box._t = setTimeout(close, 4000);
   }
 
   /* ============================================================
@@ -316,10 +337,11 @@
     });
   }
 
-  handleUrlIntake();
+  const intake = handleUrlIntake();
   setDateLabel();
   syncSettingsInputs();
   renderAll();
+  if (intake) showNfcConfirm(intake);
 
   // si el día cambia mientras la app está abierta, refresca
   let today = Store.dayKey(Date.now());

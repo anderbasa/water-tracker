@@ -272,7 +272,8 @@ main { max-width: 460px; margin: 0 auto; padding: 8px 20px 24px; }
   position: fixed;
   left: 50%;
   top: calc(16px + var(--safe-top));
-  transform: translate(-50%, -140%);
+  transform: translate(-50%, -220%);
+  opacity: 0;
   background: var(--accent);
   color: var(--accent-contrast);
   padding: 12px 20px;
@@ -281,12 +282,12 @@ main { max-width: 460px; margin: 0 auto; padding: 8px 20px 24px; }
   font-weight: 650;
   box-shadow: var(--shadow);
   z-index: 50;
-  transition: transform .35s cubic-bezier(.2,.9,.3,1.2);
+  transition: transform .35s cubic-bezier(.2,.9,.3,1.2), opacity .2s ease;
   pointer-events: none;
   max-width: 90vw;
   text-align: center;
 }
-.toast.show { transform: translate(-50%, 0); }
+.toast.show { transform: translate(-50%, 0); opacity: 1; }
 
 /* ---------------- Dialog ---------------- */
 .dialog {
@@ -312,6 +313,63 @@ main { max-width: 460px; margin: 0 auto; padding: 8px 20px 24px; }
   margin-bottom: 16px;
 }
 .dialog menu { display: flex; gap: 10px; padding: 0; }
+
+/* ---------------- Confirmación NFC ---------------- */
+.nfc-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: opacity .28s ease;
+}
+.nfc-confirm.show { opacity: 1; }
+.nfc-confirm[hidden] { display: none; }
+
+.nfc-confirm-card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  padding: 34px 26px 26px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  transform: scale(0.92);
+  transition: transform .32s cubic-bezier(.2,.9,.3,1.2);
+}
+.nfc-confirm.show .nfc-confirm-card { transform: scale(1); }
+
+.nfc-check {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+.nc-amt { font-size: 2.4rem; font-weight: 750; letter-spacing: -0.02em; }
+.nc-total { color: var(--text-dim); font-size: 0.95rem; margin-top: 6px; }
+.nc-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin: 18px 0 8px;
+}
+.nc-bar span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--water-top), var(--water-bottom));
+  transition: width .5s ease;
+}
+.nc-pct { font-weight: 700; font-size: 1rem; }
+.nc-hint { color: var(--text-dim); font-size: 0.75rem; margin-top: 16px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

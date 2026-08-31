@@ -1,7 +1,7 @@
 /* sw.js — cachea la app para que funcione sin conexión.
    Sube el número de versión cada vez que cambies archivos. */
 
-const CACHE = 'agua-v1';
+const CACHE = 'agua-v2';
 const ASSETS = [
   '.',
   'index.html',
