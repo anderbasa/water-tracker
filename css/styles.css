@@ -9,6 +9,8 @@
   --accent: #0a84ff;
   --accent-contrast: #ffffff;
   --danger: #d7263d;
+  --good: #1f9d55;
+  --warn: #b8860b;
 
   --water-top: #4fb8ff;
   --water-bottom: #0a84ff;
@@ -30,6 +32,8 @@
     --accent: #4fb8ff;
     --accent-contrast: #05121f;
     --danger: #ff6b7d;
+    --good: #35c759;
+    --warn: #e0a72a;
 
     --water-top: #2aa3ff;
     --water-bottom: #0a63c9;
@@ -92,6 +96,52 @@ main { max-width: 460px; margin: 0 auto; padding: 8px 20px 24px; }
 .bottle-readout.low .today-total,
 .bottle-readout.low .today-goal { color: var(--text); text-shadow: none; }
 .bottle-readout.low .today-pct { color: var(--text-dim); background: var(--border); }
+
+/* ---------------- Ritmo del día ---------------- */
+.pacing-wrap { display: flex; justify-content: center; margin-top: 12px; min-height: 28px; }
+.pacing-note {
+  font-size: 0.82rem;
+  font-weight: 650;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--border);
+  color: var(--text-dim);
+}
+.pacing-note.is-good { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
+.pacing-note.is-behind { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+.pacing-note.is-neutral { background: var(--border); color: var(--text-dim); }
+
+/* ---------------- Aviso de copia de seguridad ---------------- */
+.banner {
+  background: color-mix(in srgb, var(--warn) 14%, var(--bg-elev));
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--border));
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 14px;
+}
+.banner p { font-size: 0.85rem; color: var(--text); }
+.banner-actions { display: flex; gap: 16px; margin-top: 8px; }
+.banner-actions .link-btn { margin: 0; padding: 0; font-size: 0.82rem; }
+.banner-actions .link-btn.ghost { color: var(--text-dim); }
+
+/* ---------------- Confeti ---------------- */
+.confetti-piece {
+  position: absolute;
+  top: -10px;
+  left: var(--x, 50%);
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.95;
+  transform: rotate(var(--rot, 0deg));
+  animation: confettiFall var(--dur, 1.2s) var(--delay, 0s) ease-in forwards;
+  pointer-events: none;
+}
+@keyframes confettiFall {
+  to { transform: translateY(180px) rotate(calc(var(--rot, 0deg) + 220deg)); opacity: 0; }
+}
+
+.nc-celebrate { font-weight: 700; color: var(--good); margin-top: 4px; }
 
 /* ---------------- Quick add ---------------- */
 .quick-add {
@@ -202,7 +252,7 @@ main { max-width: 460px; margin: 0 auto; padding: 8px 20px 24px; }
 /* ---------------- Settings ---------------- */
 .field { display: block; margin-bottom: 22px; }
 .field > span { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 8px; }
-.field input[type="number"], .field input[type="text"] {
+.field input[type="number"], .field input[type="text"], .field input[type="time"] {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--border);
@@ -211,6 +261,7 @@ main { max-width: 460px; margin: 0 auto; padding: 8px 20px 24px; }
   color: var(--text);
   font-size: 1rem;
 }
+.field .btn-pair input[type="time"] { flex: 1; min-width: 0; }
 .field small { display: block; color: var(--text-dim); font-size: 0.78rem; margin-top: 6px; }
 .field code { background: var(--border); padding: 1px 5px; border-radius: 5px; font-size: 0.85em; }
 

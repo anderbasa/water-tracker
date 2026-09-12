@@ -10,6 +10,10 @@ const Store = (() => {
       dailyGoalMl: 2000,
       quickAmounts: [200, 330, 500],
       glassMl: 250,
+      wakeTime: '08:00',
+      sleepTime: '22:00',
+      lastExportAt: null,
+      backupSnoozeUntil: null,
     },
   };
 
@@ -81,6 +85,11 @@ const Store = (() => {
 
     totalForDay(d = Date.now()) {
       return this.entriesForDay(d).reduce((s, e) => s + e.amount, 0);
+    },
+
+    /* epoch ms del primer registro guardado, o null si no hay ninguno */
+    firstEntryTs() {
+      return state.entries.length ? state.entries[0].ts : null;
     },
 
     /* Devuelve [{ key, date, total, goalMet }] para los últimos n días (incluye hoy) */

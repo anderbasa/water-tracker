@@ -6,6 +6,37 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
   const fmt = Charts.formatMl;
+  const DAY_MS = 86400000;
+
+  /* Marca (una vez por día) si toca celebrar por haber cruzado el objetivo
+     en este añadido. Solo devuelve true la primera vez que pasa cada día. */
+  function shouldCelebrateGoal(totalBefore, totalAfter) {
+    const goal = Store.settings.dailyGoalMl;
+    if (totalBefore >= goal || totalAfter < goal) return false;
+    const key = 'water-tracker:celebratedDay';
+    const today = Store.dayKey(Date.now());
+    if (localStorage.getItem(key) === today) return false;
+    localStorage.setItem(key, today);
+    return true;
+  }
+
+  /* pequeña lluvia de confeti dentro de `container` (debe tener position != static) */
+  function burstConfetti(container, count = 22) {
+    const colors = ['#4fb8ff', '#0a84ff', '#35c759', '#ffd60a', '#ff9f0a', '#bf5af2'];
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('span');
+      p.className = 'confetti-piece';
+      const delay = Math.random() * 0.25;
+      const dur = 1 + Math.random() * 0.6;
+      p.style.setProperty('--x', `${Math.random() * 100}%`);
+      p.style.setProperty('--rot', `${Math.random() * 360}deg`);
+      p.style.setProperty('--delay', `${delay}s`);
+      p.style.setProperty('--dur', `${dur}s`);
+      p.style.background = colors[i % colors.length];
+      container.appendChild(p);
+      setTimeout(() => p.remove(), (delay + dur + 0.2) * 1000);
+    }
+  }
 
   /* ============================================================
      1. NFC / parámetros de URL
@@ -40,9 +71,12 @@
     }
     sessionStorage.setItem('lastAdd', `${sig}|${now}`);
 
+    const totalBefore = Store.totalForDay();
     const entry = Store.addEntry(amount);
     if (!entry) return null;
-    return { amount, total: Store.totalForDay(), goal: Store.settings.dailyGoalMl };
+    const total = Store.totalForDay();
+    const goal = Store.settings.dailyGoalMl;
+    return { amount, total, goal, celebrate: shouldCelebrateGoal(totalBefore, total) };
   }
 
   /* pantalla de confirmación grande tras tocar la pegatina */
@@ -57,9 +91,11 @@
     $('#ncTotal').textContent = `Hoy llevas ${fmt(info.total)} de ${fmt(info.goal)}`;
     $('#ncBar').style.width = Math.min(100, pct) + '%';
     $('#ncPct').textContent = pct + '%';
+    $('#ncCelebrate').hidden = !info.celebrate;
     box.hidden = false;
     requestAnimationFrame(() => box.classList.add('show'));
     pulseBottle();
+    if (info.celebrate) burstConfetti(box, 28);
 
     const close = () => {
       box.classList.remove('show');
@@ -68,7 +104,7 @@
       box.removeEventListener('click', close);
     };
     box.addEventListener('click', close);
-    box._t = setTimeout(close, 4000);
+    box._t = setTimeout(close, info.celebrate ? 5000 : 4000);
   }
 
   /* ============================================================
@@ -89,11 +125,56 @@
     return d;
   }
 
+  /* ritmo del día: compara lo bebido con lo esperable a esta hora,
+     según el horario habitual configurado en Ajustes (por defecto 08:00–22:00) */
+  function timeToMinutes(hhmm) {
+    const [h, m] = (hhmm || '').split(':').map(Number);
+    return (Number.isFinite(h) ? h : 8) * 60 + (Number.isFinite(m) ? m : 0);
+  }
+
+  function computePacing(total, goal) {
+    if (total >= goal) return { state: 'done' };
+    const s = Store.settings;
+    const startMin = timeToMinutes(s.wakeTime || '08:00');
+    const endMin = timeToMinutes(s.sleepTime || '22:00');
+    if (endMin <= startMin) return null; // horario inválido, no mostramos nada
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin <= startMin) return { state: 'early' };
+    if (nowMin >= endMin) return { state: 'late', diff: goal - total };
+    const expected = goal * ((nowMin - startMin) / (endMin - startMin));
+    const diff = total - expected;
+    if (diff >= 80) return { state: 'ahead', diff: Math.round(diff) };
+    if (diff <= -80) return { state: 'behind', diff: Math.round(-diff) };
+    return { state: 'ontrack' };
+  }
+
+  function renderPacing(total, goal) {
+    const el = $('#pacingNote');
+    const p = computePacing(total, goal);
+    if (!p) { el.hidden = true; return; }
+    el.hidden = false;
+    el.className = 'pacing-note';
+    const texts = {
+      done: ['✓ Objetivo del día cumplido', 'is-good'],
+      early: ['Aún es pronto — tienes todo el día por delante', 'is-neutral'],
+      late: [`Se acaba el día y te faltan ${fmt(p.diff)}`, 'is-behind'],
+      ahead: [`Vas ${fmt(p.diff)} por delante de tu ritmo 👍`, 'is-good'],
+      behind: [`Vas ${fmt(p.diff)} por debajo de tu ritmo`, 'is-behind'],
+      ontrack: ['Vas al ritmo justo', 'is-neutral'],
+    };
+    const [text, cls] = texts[p.state];
+    el.textContent = text;
+    el.classList.add(cls);
+  }
+
   function renderToday() {
     const total = Store.totalForDay();
     const goal = Store.settings.dailyGoalMl;
     const pct = goal > 0 ? total / goal : 0;
     const shownPct = Math.round(pct * 100);
+    renderPacing(total, goal);
+    checkBackupReminder();
 
     // superficie del agua dentro del clip (30 = arriba, 330 = fondo)
     const clamped = Math.max(0, Math.min(1, pct));
@@ -138,12 +219,19 @@
   }
 
   function addAmount(ml) {
+    const totalBefore = Store.totalForDay();
     const entry = Store.addEntry(ml);
     if (!entry) return;
+    const totalAfter = Store.totalForDay();
     renderToday();
     renderHistory();
     pulseBottle();
-    toast(`+${fmt(ml)}`);
+    if (shouldCelebrateGoal(totalBefore, totalAfter)) {
+      burstConfetti($('.bottle-wrap'));
+      toast('🎉 ¡Objetivo del día conseguido!');
+    } else {
+      toast(`+${fmt(ml)}`);
+    }
   }
 
   /* botones de cantidades rápidas */
@@ -246,10 +334,21 @@
     $('#setGoal').value = s.dailyGoalMl;
     $('#setQuick').value = s.quickAmounts.join(', ');
     $('#setGlass').value = s.glassMl;
+    $('#setWake').value = s.wakeTime || '08:00';
+    $('#setSleep').value = s.sleepTime || '22:00';
     const base = location.origin + location.pathname.replace(/index\.html$/, '');
     $('#nfcUrlGlass').textContent = `${base}?add=glass`;
     $('#nfcUrlFixed').textContent = `${base}?add=500`;
   }
+
+  $('#setWake').addEventListener('change', e => {
+    Store.updateSettings({ wakeTime: e.target.value || '08:00' });
+    renderToday();
+  });
+  $('#setSleep').addEventListener('change', e => {
+    Store.updateSettings({ sleepTime: e.target.value || '22:00' });
+    renderToday();
+  });
 
   $('#setGoal').addEventListener('change', e => {
     const v = parseInt(e.target.value, 10);
@@ -268,7 +367,7 @@
   });
 
   /* export / import */
-  $('#exportBtn').addEventListener('click', () => {
+  function doExport() {
     const blob = new Blob([Store.exportJSON()], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -278,7 +377,30 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    Store.updateSettings({ lastExportAt: Date.now(), backupSnoozeUntil: null });
+    checkBackupReminder();
+  }
+  $('#exportBtn').addEventListener('click', doExport);
+  $('#backupBannerExport').addEventListener('click', doExport);
+  $('#backupBannerSnooze').addEventListener('click', () => {
+    Store.updateSettings({ backupSnoozeUntil: Date.now() + 7 * DAY_MS });
+    checkBackupReminder();
   });
+
+  /* aviso si hace tiempo que no se exporta una copia (o nunca) */
+  function checkBackupReminder() {
+    const s = Store.settings;
+    const banner = $('#backupBanner');
+    const reference = s.lastExportAt || Store.firstEntryTs();
+    if (!reference) { banner.hidden = true; return; }
+    const days = Math.floor((Date.now() - reference) / DAY_MS);
+    const snoozed = s.backupSnoozeUntil && Date.now() < s.backupSnoozeUntil;
+    if (days < 14 || snoozed) { banner.hidden = true; return; }
+    $('#backupBannerText').textContent = s.lastExportAt
+      ? `Hace ${days} días de tu última copia de seguridad. Tus datos solo están en este Safari.`
+      : `Llevas ${days} días registrando agua sin copia de seguridad. Tus datos solo están en este Safari.`;
+    banner.hidden = false;
+  }
 
   $('#importBtn').addEventListener('click', () => $('#importFile').click());
   $('#importFile').addEventListener('change', async e => {

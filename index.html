@@ -56,6 +56,16 @@
       </div>
     </div>
 
+    <div class="pacing-wrap"><span id="pacingNote" class="pacing-note" hidden></span></div>
+
+    <div id="backupBanner" class="banner" hidden>
+      <p id="backupBannerText"></p>
+      <div class="banner-actions">
+        <button id="backupBannerExport" class="link-btn" type="button">Exportar ahora</button>
+        <button id="backupBannerSnooze" class="link-btn ghost" type="button">En 7 días</button>
+      </div>
+    </div>
+
     <div class="quick-add" id="quickAdd"></div>
 
     <button class="link-btn" id="customAddBtn" type="button">Otra cantidad…</button>
@@ -106,6 +116,15 @@
     </label>
 
     <div class="field">
+      <span>Tu horario habitual</span>
+      <div class="btn-pair">
+        <input id="setWake" type="time" aria-label="Hora en la que empiezas a beber agua" />
+        <input id="setSleep" type="time" aria-label="Hora en la que sueles terminar el día" />
+      </div>
+      <small>Se usa para decirte si vas bien de ritmo a cada hora, no solo el total.</small>
+    </div>
+
+    <div class="field">
       <span>Copia de seguridad</span>
       <div class="btn-pair">
         <button id="exportBtn" class="btn" type="button">Exportar datos</button>
@@ -153,6 +172,7 @@
     <p id="ncTotal" class="nc-total"></p>
     <div class="nc-bar"><span id="ncBar"></span></div>
     <p id="ncPct" class="nc-pct"></p>
+    <p id="ncCelebrate" class="nc-celebrate" hidden>🎉 ¡Objetivo del día conseguido!</p>
     <p class="nc-hint">Toca para cerrar</p>
   </div>
 </div>

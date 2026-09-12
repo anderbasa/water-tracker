@@ -71,6 +71,21 @@ usas como "disparador".
 
 Las URL exactas para tu instalación aparecen también en **Ajustes** (para copiarlas).
 
+### Extra — registrar también en Apple Salud (sin tocar la web)
+
+Si usas la **Opción A (Atajos)**, puedes hacer que el mismo toque quede también
+en la app Salud, como respaldo independiente de la web y con sus propias
+tendencias:
+
+1. En el mismo Atajo, añade una acción más **después** de "Abrir URL":
+   **Registrar muestra de salud** → tipo **Agua** → cantidad (la misma que uses
+   en la URL, ej. 250 ml).
+2. Guarda. Cada toque queda en dos sitios: la web (con el ritmo, el historial y
+   la celebración) y Salud (con sus gráficas y sin depender de Safari).
+
+No requiere tocar el código ni el repositorio, es solo una acción extra en el
+Atajo que ya tienes.
+
 ---
 
 ## 3. Usarla
@@ -83,12 +98,18 @@ Las URL exactas para tu instalación aparecen también en **Ajustes** (para copi
 > falta instalarla. (Si algún día quieres sincronizar entre varios dispositivos,
 > habría que añadir un backend; ver más abajo.)
 
-- **Hoy:** la botella se llena según lo que llevas bebido. Botones de cantidades
-  rápidas y "Otra cantidad…" para añadir a mano. Cada toma se puede borrar.
+- **Hoy:** la botella se llena según lo que llevas bebido. Debajo, un aviso de
+  **ritmo** te dice si vas bien para la hora que es ("vas 300 ml por debajo de tu
+  ritmo", "aún es pronto"…), calculado contra tu horario habitual (Ajustes).
+  Botones de cantidades rápidas y "Otra cantidad…" para añadir a mano. Cada toma
+  se puede borrar. La primera vez que llegas al objetivo cada día, hay un
+  pequeño confeti de celebración.
 - **Historial:** barras por día (semana/mes) o por mes (año). Verde = día en que
   llegaste al objetivo. Media, días cumplidos y racha actual.
-- **Ajustes:** objetivo diario, cantidades rápidas, cantidad del vaso NFC, y
-  copia de seguridad (exportar/importar `.json`).
+- **Ajustes:** objetivo diario, cantidades rápidas, cantidad del vaso NFC,
+  horario habitual (para el ritmo), y copia de seguridad (exportar/importar
+  `.json`). Si pasan 14 días sin exportar, aparece un aviso discreto en la
+  pantalla Hoy (se puede posponer 7 días).
 
 ---
 
