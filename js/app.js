@@ -8,10 +8,20 @@
   const fmt = Charts.formatMl;
   const DAY_MS = 86400000;
 
+  /* objetivo de hoy, incluyendo la subida por calor si se aceptó (solo para hoy,
+     no cambia el ajuste permanente ni el histórico) */
+  function getEffectiveGoal() {
+    const s = Store.settings;
+    const today = Store.dayKey(Date.now());
+    if (s.weatherBoost && s.weatherBoost.day === today) {
+      return s.dailyGoalMl + s.weatherBoost.extraMl;
+    }
+    return s.dailyGoalMl;
+  }
+
   /* Marca (una vez por día) si toca celebrar por haber cruzado el objetivo
      en este añadido. Solo devuelve true la primera vez que pasa cada día. */
-  function shouldCelebrateGoal(totalBefore, totalAfter) {
-    const goal = Store.settings.dailyGoalMl;
+  function shouldCelebrateGoal(totalBefore, totalAfter, goal) {
     if (totalBefore >= goal || totalAfter < goal) return false;
     const key = 'water-tracker:celebratedDay';
     const today = Store.dayKey(Date.now());
@@ -75,8 +85,8 @@
     const entry = Store.addEntry(amount);
     if (!entry) return null;
     const total = Store.totalForDay();
-    const goal = Store.settings.dailyGoalMl;
-    return { amount, total, goal, celebrate: shouldCelebrateGoal(totalBefore, total) };
+    const goal = getEffectiveGoal();
+    return { amount, total, goal, celebrate: shouldCelebrateGoal(totalBefore, total, goal) };
   }
 
   /* pantalla de confirmación grande tras tocar la pegatina */
@@ -170,7 +180,8 @@
 
   function renderToday() {
     const total = Store.totalForDay();
-    const goal = Store.settings.dailyGoalMl;
+    const goal = getEffectiveGoal();
+    const boosted = goal !== Store.settings.dailyGoalMl;
     const pct = goal > 0 ? total / goal : 0;
     const shownPct = Math.round(pct * 100);
     renderPacing(total, goal);
@@ -183,7 +194,7 @@
     waterWaveBack.setAttribute('d', wavePath(surfaceY + 3));
 
     $('#todayTotal').textContent = fmt(total);
-    $('#todayGoal').textContent = `de ${fmt(goal)}`;
+    $('#todayGoal').textContent = `de ${fmt(goal)}` + (boosted ? ' 🌡️' : '');
     $('#todayPct').textContent = `${shownPct}%`;
     bottleReadout.classList.toggle('low', pct < 0.74);
 
@@ -226,7 +237,7 @@
     renderToday();
     renderHistory();
     pulseBottle();
-    if (shouldCelebrateGoal(totalBefore, totalAfter)) {
+    if (shouldCelebrateGoal(totalBefore, totalAfter, getEffectiveGoal())) {
       burstConfetti($('.bottle-wrap'));
       toast('🎉 ¡Objetivo del día conseguido!');
     } else {
@@ -336,6 +347,7 @@
     $('#setGlass').value = s.glassMl;
     $('#setWake').value = s.wakeTime || '08:00';
     $('#setSleep').value = s.sleepTime || '22:00';
+    $('#setWeatherEnabled').checked = s.weatherSuggestEnabled !== false;
     const base = location.origin + location.pathname.replace(/index\.html$/, '');
     $('#nfcUrlGlass').textContent = `${base}?add=glass`;
     $('#nfcUrlFixed').textContent = `${base}?add=500`;
@@ -402,6 +414,70 @@
     banner.hidden = false;
   }
 
+  /* ---- sugerencia de objetivo si va a hacer calor (Open-Meteo, sin clave) ---- */
+  $('#setWeatherEnabled').addEventListener('change', e => {
+    Store.updateSettings({ weatherSuggestEnabled: e.target.checked });
+    if (!e.target.checked) $('#weatherBanner').hidden = true;
+  });
+
+  function showWeatherBanner(maxTemp, extraMl) {
+    $('#weatherBannerText').textContent =
+      `Hoy se esperan ${Math.round(maxTemp)}°C. ¿Subimos el objetivo a ${fmt(Store.settings.dailyGoalMl + extraMl)} por hoy?`;
+    $('#weatherBanner').hidden = false;
+    $('#weatherBanner').dataset.extra = extraMl;
+  }
+
+  $('#weatherBannerAccept').addEventListener('click', () => {
+    const extraMl = Number($('#weatherBanner').dataset.extra) || 0;
+    Store.updateSettings({ weatherBoost: { day: Store.dayKey(Date.now()), extraMl } });
+    $('#weatherBanner').hidden = true;
+    renderToday();
+    toast(`Objetivo de hoy subido +${fmt(extraMl)} 🌡️`);
+  });
+
+  $('#weatherBannerDismiss').addEventListener('click', () => {
+    Store.updateSettings({ weatherDismissedDay: Store.dayKey(Date.now()) });
+    $('#weatherBanner').hidden = true;
+  });
+
+  /* consulta la previsión de hoy una vez al día (con caché) y, si va a hacer
+     calor, propone subir el objetivo. Falla en silencio sin ubicación/red. */
+  async function checkWeatherBoost() {
+    const s = Store.settings;
+    if (s.weatherSuggestEnabled === false) return;
+    const today = Store.dayKey(Date.now());
+    if (s.weatherDismissedDay === today) return;
+    if (s.weatherBoost && s.weatherBoost.day === today) return; // ya aceptada hoy
+
+    let cache = null;
+    try { cache = JSON.parse(localStorage.getItem('water-tracker:weatherCache') || 'null'); } catch { /* ignore */ }
+
+    let maxTemp;
+    if (cache && cache.day === today) {
+      maxTemp = cache.maxTemp;
+    } else {
+      if (!('geolocation' in navigator)) return;
+      const pos = await new Promise(resolve => {
+        navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), { timeout: 8000, maximumAge: 3600000 });
+      });
+      if (!pos) return;
+      try {
+        const lat = pos.coords.latitude.toFixed(2), lon = pos.coords.longitude.toFixed(2);
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max&forecast_days=1&timezone=auto`;
+        const res = await fetch(url);
+        const data = await res.json();
+        maxTemp = data && data.daily && data.daily.temperature_2m_max && data.daily.temperature_2m_max[0];
+        if (typeof maxTemp !== 'number') return;
+        localStorage.setItem('water-tracker:weatherCache', JSON.stringify({ day: today, maxTemp }));
+      } catch { return; /* sin red o API caída: no molestamos */ }
+    }
+
+    if (maxTemp < 28) return;
+    const boostFrac = maxTemp >= 32 ? 0.20 : 0.10;
+    const extraMl = Math.round((Store.settings.dailyGoalMl * boostFrac) / 50) * 50;
+    if (extraMl > 0) showWeatherBanner(maxTemp, extraMl);
+  }
+
   $('#importBtn').addEventListener('click', () => $('#importFile').click());
   $('#importFile').addEventListener('change', async e => {
     const file = e.target.files[0];
@@ -464,6 +540,7 @@
   syncSettingsInputs();
   renderAll();
   if (intake) showNfcConfirm(intake);
+  checkWeatherBoost();
 
   // si el día cambia mientras la app está abierta, refresca
   let today = Store.dayKey(Date.now());

@@ -14,6 +14,9 @@ const Store = (() => {
       sleepTime: '22:00',
       lastExportAt: null,
       backupSnoozeUntil: null,
+      weatherSuggestEnabled: true,
+      weatherBoost: null,          // { day: 'YYYY-MM-DD', extraMl } tras aceptar la sugerencia
+      weatherDismissedDay: null,   // 'YYYY-MM-DD' si hoy se dijo "no, gracias"
     },
   };
 

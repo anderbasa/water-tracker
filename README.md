@@ -107,9 +107,22 @@ Atajo que ya tienes.
 - **Historial:** barras por día (semana/mes) o por mes (año). Verde = día en que
   llegaste al objetivo. Media, días cumplidos y racha actual.
 - **Ajustes:** objetivo diario, cantidades rápidas, cantidad del vaso NFC,
-  horario habitual (para el ritmo), y copia de seguridad (exportar/importar
-  `.json`). Si pasan 14 días sin exportar, aparece un aviso discreto en la
-  pantalla Hoy (se puede posponer 7 días).
+  horario habitual (para el ritmo), sugerencia de objetivo según el tiempo, y
+  copia de seguridad (exportar/importar `.json`). Si pasan 14 días sin
+  exportar, aparece un aviso discreto en la pantalla Hoy (se puede posponer
+  7 días).
+
+### Objetivo más alto si va a hacer calor
+
+Si activas "Sugerir subir el objetivo si hace calor" (activado por defecto),
+una vez al día la app consulta con tu ubicación aproximada la temperatura
+máxima prevista para hoy, usando [Open-Meteo](https://open-meteo.com/)
+(gratis, sin clave ni cuenta, sin backend propio). Si se esperan 28°C o más,
+te propone subir el objetivo de **hoy** un 10-20% ("Hoy se esperan 32°C.
+¿Subimos el objetivo a 2.4 L?"). Si aceptas, solo afecta al día de hoy (no
+cambia tu objetivo permanente ni reescribe el histórico); si dices que no, no
+vuelve a preguntar hasta el día siguiente. Sin permiso de ubicación o sin red,
+la app sigue funcionando igual, simplemente no hace la sugerencia.
 
 ---
 

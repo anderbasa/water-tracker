@@ -58,6 +58,14 @@
 
     <div class="pacing-wrap"><span id="pacingNote" class="pacing-note" hidden></span></div>
 
+    <div id="weatherBanner" class="banner banner-weather" hidden>
+      <p id="weatherBannerText"></p>
+      <div class="banner-actions">
+        <button id="weatherBannerAccept" class="link-btn" type="button">Sí, por hoy</button>
+        <button id="weatherBannerDismiss" class="link-btn ghost" type="button">No, gracias</button>
+      </div>
+    </div>
+
     <div id="backupBanner" class="banner" hidden>
       <p id="backupBannerText"></p>
       <div class="banner-actions">
@@ -123,6 +131,12 @@
       </div>
       <small>Se usa para decirte si vas bien de ritmo a cada hora, no solo el total.</small>
     </div>
+
+    <label class="field checkbox-field">
+      <input id="setWeatherEnabled" type="checkbox" />
+      <span>Sugerir subir el objetivo si hace calor</span>
+      <small>Consulta la previsión de hoy con tu ubicación aproximada (Open-Meteo, sin cuenta). Puedes desactivarlo.</small>
+    </label>
 
     <div class="field">
       <span>Copia de seguridad</span>

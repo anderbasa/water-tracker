@@ -11,6 +11,7 @@
   --danger: #d7263d;
   --good: #1f9d55;
   --warn: #b8860b;
+  --hot: #d9720a;
 
   --water-top: #4fb8ff;
   --water-bottom: #0a84ff;
@@ -34,6 +35,7 @@
     --danger: #ff6b7d;
     --good: #35c759;
     --warn: #e0a72a;
+    --hot: #ff9f0a;
 
     --water-top: #2aa3ff;
     --water-bottom: #0a63c9;
@@ -123,6 +125,12 @@ main { max-width: 460px; margin: 0 auto; padding: 8px 20px 24px; }
 .banner-actions { display: flex; gap: 16px; margin-top: 8px; }
 .banner-actions .link-btn { margin: 0; padding: 0; font-size: 0.82rem; }
 .banner-actions .link-btn.ghost { color: var(--text-dim); }
+
+.banner-weather {
+  background: color-mix(in srgb, var(--hot) 14%, var(--bg-elev));
+  border-color: color-mix(in srgb, var(--hot) 35%, var(--border));
+}
+.banner-weather .link-btn:not(.ghost) { color: var(--hot); }
 
 /* ---------------- Confeti ---------------- */
 .confetti-piece {
@@ -263,6 +271,11 @@ main { max-width: 460px; margin: 0 auto; padding: 8px 20px 24px; }
 }
 .field .btn-pair input[type="time"] { flex: 1; min-width: 0; }
 .field small { display: block; color: var(--text-dim); font-size: 0.78rem; margin-top: 6px; }
+
+.checkbox-field { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.checkbox-field > span { margin: 0; font-weight: 600; }
+.checkbox-field input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
+.checkbox-field small { flex-basis: 100%; margin-top: 2px; }
 .field code { background: var(--border); padding: 1px 5px; border-radius: 5px; font-size: 0.85em; }
 
 .btn {
