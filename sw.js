@@ -1,14 +1,18 @@
 /* sw.js — cachea la app para que funcione sin conexión.
-   Sube el número de versión cada vez que cambies archivos. */
+   Estrategia "network-first" en lo propio: con conexión, la app instalada
+   siempre coge la versión más nueva (no hace falta ir borrando caché a
+   mano); sin conexión, usa lo último que se guardó. Las llamadas a
+   Firestore/Open-Meteo no pasan por aquí (son de otro origen). */
 
-const CACHE = 'agua-v4';
+const CACHE = 'agua-v5';
 const ASSETS = [
   '.',
   'index.html',
   'css/styles.css',
+  'js/app.js',
   'js/store.js',
   'js/charts.js',
-  'js/app.js',
+  'js/firebase.js',
   'manifest.webmanifest',
   'icons/icon.svg',
   'icons/icon-192.png',
@@ -33,24 +37,15 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (url.origin !== location.origin) return;
+  if (url.origin !== location.origin) return; // Firestore, Open-Meteo: directo a la red
 
-  // Navegación (incluye ?add=…): responde siempre con index.html
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      caches.match('index.html').then(cached => cached || fetch(request))
-    );
-    return;
-  }
-
-  // Resto: cache-first, y si viene de la red la guardamos
   event.respondWith(
-    caches.match(request, { ignoreSearch: true }).then(cached => {
-      return cached || fetch(request).then(resp => {
-        const copy = resp.clone();
-        caches.open(CACHE).then(c => c.put(request, copy)).catch(() => {});
-        return resp;
-      });
-    }).catch(() => caches.match('index.html'))
+    fetch(request).then(resp => {
+      const copy = resp.clone();
+      caches.open(CACHE).then(c => c.put(request, copy)).catch(() => {});
+      return resp;
+    }).catch(() =>
+      caches.match(request, { ignoreSearch: true }).then(cached => cached || caches.match('index.html'))
+    )
   );
 });

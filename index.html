@@ -12,6 +12,27 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<!-- pantallas de carga iPhone (claro/oscuro), generadas con tools/make-splash.js -->
+<link rel="apple-touch-startup-image" href="icons/splash/se-8-light.png" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/se-8-dark.png" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/x-11pro-12mini-13mini-light.png" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/x-11pro-12mini-13mini-dark.png" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/xr-11-light.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/xr-11-dark.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/xsmax-11promax-light.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/xsmax-11promax-dark.png" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/12-13-14-light.png" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/12-13-14-dark.png" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/12promax-13promax-14plus-light.png" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/12promax-13promax-14plus-dark.png" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/14pro-15-16-light.png" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/14pro-15-16-dark.png" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/14promax-15promax-15plus-16plus-light.png" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/14promax-15promax-15plus-16plus-dark.png" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/16pro-light.png" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/16pro-dark.png" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" />
+<link rel="apple-touch-startup-image" href="icons/splash/16promax-light.png" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" />
+<link rel="apple-touch-startup-image" href="icons/splash/16promax-dark.png" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" />
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -78,6 +99,20 @@
 
     <button class="link-btn" id="customAddBtn" type="button">Otra cantidad…</button>
 
+    <div id="wellbeingCard" class="wellbeing-card">
+      <p class="wellbeing-label">¿Cómo notas la hinchazón hoy?</p>
+      <div id="wellbeingScale" class="wellbeing-scale">
+        <button type="button" data-v="1" aria-label="Mucha hinchazón">😖</button>
+        <button type="button" data-v="2" aria-label="Bastante">😕</button>
+        <button type="button" data-v="3" aria-label="Normal">😐</button>
+        <button type="button" data-v="4" aria-label="Poca">🙂</button>
+        <button type="button" data-v="5" aria-label="Nada">😄</button>
+      </div>
+      <button id="wellbeingDone" type="button" class="wellbeing-done" hidden>
+        <span class="wb-face">🙂</span> Hoy · toca para cambiar
+      </button>
+    </div>
+
     <h2 class="section-title">Hoy has bebido</h2>
     <ul id="entryList" class="entry-list"></ul>
     <p id="entryEmpty" class="empty-note">Todavía no hay registros. Toca la pegatina NFC o usa los botones de arriba.</p>
@@ -100,6 +135,11 @@
     <div class="chart-card">
       <svg id="barChart" class="bar-chart" viewBox="0 0 320 180" preserveAspectRatio="none" role="img" aria-label="Gráfico de agua bebida"></svg>
       <div id="chartLabels" class="chart-labels"></div>
+    </div>
+
+    <div id="wellbeingInsightCard" class="wellbeing-insight-card">
+      <p class="wellbeing-insight-title">💧 Agua y cómo te sientes</p>
+      <p id="wellbeingInsightText" class="wellbeing-insight-text"></p>
     </div>
 
     <button class="link-btn danger" id="wipeBtn" type="button">Borrar todos los datos</button>
@@ -145,7 +185,7 @@
         <button id="importBtn" class="btn" type="button">Importar datos</button>
         <input id="importFile" type="file" accept="application/json,.json" hidden />
       </div>
-      <small>Guarda el archivo en un sitio seguro. Los datos viven solo en este móvil.</small>
+      <small>Aunque los datos ya están en la nube, una copia aparte nunca está de más.</small>
     </div>
 
     <div class="field">
@@ -156,7 +196,12 @@
       <code id="nfcUrlFixed" class="nfc-code"></code>
     </div>
 
-    <p class="version-note">Mi registro de agua · v1 · datos locales</p>
+    <p id="syncStatus" class="sync-status" hidden>
+      ⚠️ Firestore sin configurar todavía: nada de esto se guarda entre sesiones.
+      Mira el README para crear la base de datos gratuita.
+    </p>
+
+    <p class="version-note">Mi registro de agua · v2 · Firestore</p>
   </section>
 </main>
 
@@ -191,8 +236,6 @@
   </div>
 </div>
 
-<script src="js/store.js"></script>
-<script src="js/charts.js"></script>
-<script src="js/app.js"></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

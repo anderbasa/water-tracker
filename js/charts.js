@@ -1,6 +1,6 @@
 /* charts.js — gráfico de barras en SVG, sin dependencias. */
 
-const Charts = (() => {
+export const Charts = (() => {
   const NS = 'http://www.w3.org/2000/svg';
   const W = 320, H = 180, PAD_B = 4, PAD_T = 10;
 

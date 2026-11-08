@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // tomas de agua: cualquiera que tenga la URL puede leer/crear/borrar,
+    // pero una toma, una vez creada, no se puede editar (solo borrar y
+    // volver a crear) — y se valida la forma mínima de los datos.
+    match /entries/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['amount', 'ts'])
+                    && request.resource.data.amount is number
+                    && request.resource.data.amount > 0
+                    && request.resource.data.amount < 5000
+                    && request.resource.data.ts is number;
+      allow delete: if true;
+      allow update: if false;
+    }
+
+    // check-in de bienestar: un documento por día (id = "YYYY-MM-DD")
+    match /wellbeing/{day} {
+      allow read: if true;
+      allow write: if request.resource.data.value is number
+                   && request.resource.data.value >= 1
+                   && request.resource.data.value <= 5;
+    }
+
+    // ajustes: un único documento
+    match /config/settings {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}
