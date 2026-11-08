@@ -699,9 +699,18 @@ async function boot() {
     if (!document.hidden) { setDateLabel(); renderAll(); }
   });
 
-  // service worker (PWA offline)
+  // service worker (PWA offline). Si entra una versión nueva, la pestaña
+  // abierta se recarga sola una vez para dejar de ver la versión vieja.
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    let reloadedForUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloadedForUpdate) return;
+      reloadedForUpdate = true;
+      location.reload();
+    });
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.update().catch(() => {});
+    }).catch(() => {});
   }
 }
 

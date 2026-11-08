@@ -4,7 +4,7 @@
    mano); sin conexión, usa lo último que se guardó. Las llamadas a
    Firestore/Open-Meteo no pasan por aquí (son de otro origen). */
 
-const CACHE = 'agua-v5';
+const CACHE = 'agua-v6';
 const ASSETS = [
   '.',
   'index.html',
