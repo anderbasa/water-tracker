@@ -654,10 +654,30 @@ function setDateLabel() {
   });
 }
 
+/* recupera, una sola vez, el histórico de la versión anterior a Firestore
+   (vivía en localStorage, bajo esta misma web) y lo sube a la base de datos
+   nueva. No borra nada si ya se hizo o si no hay nada que recuperar. */
+function migrateLegacyLocalStorage() {
+  const FLAG = 'water-tracker:migratedToFirestore';
+  if (localStorage.getItem(FLAG)) return;
+  const raw = localStorage.getItem('water-tracker:v1');
+  localStorage.setItem(FLAG, '1'); // no reintentar en cada carga, haya ido bien o no
+  if (!raw) return;
+  try {
+    const count = (JSON.parse(raw).entries || []).length;
+    if (!count) return;
+    Store.importJSON(raw);
+    setTimeout(() => toast(`Recuperados ${count} registros anteriores 👍`), 500);
+  } catch (e) {
+    console.error('No se pudo recuperar el histórico anterior', e);
+  }
+}
+
 async function boot() {
   initHaptics();
   setDateLabel();
   await Store.ready; // datos de Firestore (o por defecto, si aún no está configurado)
+  migrateLegacyLocalStorage();
   const intake = handleUrlIntake();
   syncSettingsInputs();
   renderAll();
