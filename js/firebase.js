@@ -15,12 +15,12 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const firebaseConfig = {
-  apiKey: 'PEGA_AQUI_API_KEY',
-  authDomain: 'PEGA_AQUI_PROYECTO.firebaseapp.com',
-  projectId: 'PEGA_AQUI_PROYECTO',
-  storageBucket: 'PEGA_AQUI_PROYECTO.appspot.com',
-  messagingSenderId: 'PEGA_AQUI_SENDER_ID',
-  appId: 'PEGA_AQUI_APP_ID',
+  apiKey: 'AIzaSyDpLVHNS--fGZ7bZIv1qAwtyJgispZ4w30',
+  authDomain: 'water-tracker-515db.firebaseapp.com',
+  projectId: 'water-tracker-515db',
+  storageBucket: 'water-tracker-515db.firebasestorage.app',
+  messagingSenderId: '75179993128',
+  appId: '1:75179993128:web:b9041f389d369ce2c82d1d',
 };
 
 export const isConfigured = !firebaseConfig.apiKey.startsWith('PEGA_AQUI');
