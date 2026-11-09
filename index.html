@@ -121,6 +121,7 @@
   <!-- ================= HISTORIAL ================= -->
   <section id="view-history" class="view">
     <div class="range-tabs" id="rangeTabs">
+      <span class="range-pill" id="rangePill"></span>
       <button data-range="week" class="is-active" type="button">Semana</button>
       <button data-range="month" type="button">Mes</button>
       <button data-range="year" type="button">Año</button>
@@ -211,8 +212,9 @@
   <button data-view="settings" type="button"><span class="tab-ico">⚙️</span>Ajustes</button>
 </nav>
 
-<!-- Modal cantidad personalizada -->
-<dialog id="customDialog" class="dialog">
+<!-- Hoja "otra cantidad" (se puede arrastrar hacia abajo para cerrar) -->
+<dialog id="customDialog" class="sheet">
+  <div id="sheetGrabber" class="sheet-grabber"><span></span></div>
   <form method="dialog">
     <h3>Añadir cantidad</h3>
     <input id="customAmount" type="number" min="1" step="10" inputmode="numeric" placeholder="ml" autofocus />

@@ -2,6 +2,7 @@
 
 import { Store } from './store.js';
 import { Charts } from './charts.js';
+import { animateSpring, project, rubberband } from './spring.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -159,6 +160,21 @@ function wavePath(surfaceY) {
   return d;
 }
 
+let currentSurfaceY = 330; // vacía de inicio
+let cancelWaterSpring = null;
+function animateWaterTo(target) {
+  if (cancelWaterSpring) cancelWaterSpring();
+  cancelWaterSpring = animateSpring({
+    from: currentSurfaceY, to: target, damping: 1, response: 0.6,
+    onUpdate: y => {
+      currentSurfaceY = y;
+      waterWave.setAttribute('d', wavePath(y));
+      waterWaveBack.setAttribute('d', wavePath(y + 3));
+    },
+    onDone: () => { cancelWaterSpring = null; },
+  });
+}
+
 /* ritmo del día: compara lo bebido con lo esperable a esta hora,
    según el horario habitual configurado en Ajustes (por defecto 08:00–22:00) */
 function timeToMinutes(hhmm) {
@@ -212,39 +228,102 @@ function renderToday() {
   checkBackupReminder();
   renderWellbeing();
 
-  // superficie del agua dentro del clip (30 = arriba, 330 = fondo)
+  // superficie del agua dentro del clip (30 = arriba, 330 = fondo) — sube o
+  // baja con un muelle, nunca de golpe, partiendo siempre de lo que se ve
+  // ahora mismo para poder interrumpirse sin saltos.
   const clamped = Math.max(0, Math.min(1, pct));
-  const surfaceY = 330 - clamped * 300;
-  waterWave.setAttribute('d', wavePath(surfaceY));
-  waterWaveBack.setAttribute('d', wavePath(surfaceY + 3));
+  const targetY = 330 - clamped * 300;
+  animateWaterTo(targetY);
 
   $('#todayTotal').textContent = fmt(total);
   $('#todayGoal').textContent = `de ${fmt(goal)}` + (boosted ? ' 🌡️' : '');
   $('#todayPct').textContent = `${shownPct}%`;
   bottleReadout.classList.toggle('low', pct < 0.74);
 
-  // lista de tomas
+  // lista de tomas (deslizar a la izquierda para borrar)
   const entries = Store.entriesForDay().slice().reverse();
   const list = $('#entryList');
   list.innerHTML = '';
   entries.forEach(e => {
     const li = document.createElement('li');
+    const bg = document.createElement('div');
+    bg.className = 'entry-delete-bg';
+    bg.textContent = 'Eliminar';
+    const row = document.createElement('div');
+    row.className = 'entry-row';
     const t = new Date(e.ts).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    li.innerHTML = `<span class="amt">${fmt(e.amount)}</span><span class="time">${t}</span>`;
+    row.innerHTML = `<span class="amt">${fmt(e.amount)}</span><span class="time">${t}</span>`;
     const del = document.createElement('button');
     del.className = 'del';
     del.type = 'button';
     del.setAttribute('aria-label', 'Eliminar');
     del.textContent = '✕';
-    del.addEventListener('click', () => {
-      vibrar();
-      Store.removeEntry(e.id);
-      renderToday();
-    });
-    li.appendChild(del);
+    const removeThis = () => { vibrar(); Store.removeEntry(e.id); renderToday(); };
+    del.addEventListener('click', removeThis);
+    row.appendChild(del);
+    li.appendChild(bg);
+    li.appendChild(row);
     list.appendChild(li);
+    attachSwipeDelete(row, bg, removeThis);
   });
   $('#entryEmpty').style.display = entries.length ? 'none' : 'block';
+}
+
+/* desliza `row` hacia la izquierda para revelar `bg` y borrar — con el
+   mismo lenguaje de movimiento que el resto de la app: sigue al dedo 1:1,
+   proyecta hacia dónde va el gesto en vez de mirar solo dónde se soltó, y
+   si no llega a comprometerse, rebota a su sitio con muelle. */
+function attachSwipeDelete(row, bg, onCommit) {
+  const THRESHOLD = 10;
+  const COMMIT_PX = 90;
+  let x = 0, cancelSpring = null, s = null;
+
+  row.addEventListener('pointerdown', e => {
+    if (e.target.closest('.del')) return; // el botón sigue funcionando normal
+    if (cancelSpring) cancelSpring();
+    s = { id: e.pointerId, startX: e.clientX, startY: e.clientY, baseX: x, dragging: false, lastX: e.clientX, lastT: performance.now(), v: 0 };
+  });
+  row.addEventListener('pointermove', e => {
+    if (!s || s.id !== e.pointerId) return;
+    const dx = e.clientX - s.startX, dy = e.clientY - s.startY;
+    if (!s.dragging) {
+      if (Math.abs(dx) < THRESHOLD && Math.abs(dy) < THRESHOLD) return;
+      if (Math.abs(dy) > Math.abs(dx)) { s = null; return; } // scroll vertical: no interferimos
+      s.dragging = true;
+      row.setPointerCapture(s.id);
+    }
+    let nx = Math.min(0, s.baseX + dx);
+    if (nx < -140) nx = -140 - rubberband(-nx - 140, 120);
+    const now = performance.now();
+    const dt = now - s.lastT;
+    if (dt > 0) s.v = (e.clientX - s.lastX) / (dt / 1000);
+    s.lastX = e.clientX; s.lastT = now;
+    x = nx;
+    row.style.transform = `translateX(${x}px)`;
+    bg.style.opacity = Math.min(1, -x / COMMIT_PX);
+  });
+  function release(e) {
+    if (!s || s.id !== e.pointerId) return;
+    const wasDragging = s.dragging;
+    const v = s.v;
+    s = null;
+    if (!wasDragging) return;
+    const projected = x + project(v);
+    if (projected < -COMMIT_PX || v < -600) {
+      cancelSpring = animateSpring({
+        from: x, to: -420, velocity: v, damping: 1, response: 0.28,
+        onUpdate: nx => { x = nx; row.style.transform = `translateX(${nx}px)`; },
+        onDone: onCommit,
+      });
+    } else {
+      cancelSpring = animateSpring({
+        from: x, to: 0, velocity: v, damping: 1, response: 0.35,
+        onUpdate: nx => { x = nx; row.style.transform = `translateX(${nx}px)`; bg.style.opacity = Math.min(1, -nx / COMMIT_PX); },
+      });
+    }
+  }
+  row.addEventListener('pointerup', release);
+  row.addEventListener('pointercancel', release);
 }
 
 function pulseBottle() {
@@ -286,18 +365,80 @@ function renderQuickAdd() {
   });
 }
 
-/* diálogo cantidad personalizada */
+/* hoja "otra cantidad" — entra deslizando desde abajo y se puede cerrar
+   arrastrando el tirador hacia abajo: sigue al dedo 1:1, resiste si se tira
+   hacia arriba (rubber-band) y, al soltar, "aterriza" según hacia dónde iba
+   el gesto, no solo dónde se soltó (igual que iOS). */
 const dlg = $('#customDialog');
-$('#customAddBtn').addEventListener('click', () => {
+const sheetGrabber = $('#sheetGrabber');
+let sheetY = 0, cancelSheetSpring = null;
+
+function sheetSetY(y) { sheetY = y; dlg.style.transform = `translateY(${y}px)`; }
+
+function openSheet() {
   $('#customAmount').value = '';
   dlg.showModal();
+  const h = dlg.getBoundingClientRect().height || 320;
+  sheetSetY(h);
+  requestAnimationFrame(() => {
+    if (cancelSheetSpring) cancelSheetSpring();
+    cancelSheetSpring = animateSpring({ from: h, to: 0, damping: 1, response: 0.4, onUpdate: sheetSetY });
+  });
+}
+function closeSheet(velocity = 0) {
+  const h = dlg.getBoundingClientRect().height || 320;
+  if (cancelSheetSpring) cancelSheetSpring();
+  cancelSheetSpring = animateSpring({
+    from: sheetY, to: h, velocity, damping: 1, response: 0.3,
+    onUpdate: sheetSetY,
+    onDone: () => { dlg.close(); dlg.style.transform = ''; },
+  });
+}
+
+$('#customAddBtn').addEventListener('click', openSheet);
+$('#customDialog').querySelector('button[value="cancel"]').addEventListener('click', e => {
+  e.preventDefault();
+  closeSheet();
 });
+dlg.addEventListener('cancel', e => { e.preventDefault(); closeSheet(); });
 $('#customConfirm').addEventListener('click', e => {
   e.preventDefault();
   const v = parseInt($('#customAmount').value, 10);
-  dlg.close();
+  closeSheet();
   if (Number.isFinite(v) && v > 0) addAmount(v);
 });
+
+let sheetDrag = null;
+sheetGrabber.addEventListener('pointerdown', e => {
+  if (cancelSheetSpring) cancelSheetSpring();
+  sheetDrag = { startY: e.clientY, baseY: sheetY, lastY: e.clientY, lastT: performance.now(), v: 0 };
+  sheetGrabber.setPointerCapture(e.pointerId);
+});
+sheetGrabber.addEventListener('pointermove', e => {
+  if (!sheetDrag) return;
+  const dy = e.clientY - sheetDrag.startY;
+  let y = sheetDrag.baseY + dy;
+  if (y < 0) y = -rubberband(-y, 200);
+  const now = performance.now();
+  const dt = now - sheetDrag.lastT;
+  if (dt > 0) sheetDrag.v = (e.clientY - sheetDrag.lastY) / (dt / 1000);
+  sheetDrag.lastY = e.clientY; sheetDrag.lastT = now;
+  sheetSetY(y);
+});
+function endSheetDrag() {
+  if (!sheetDrag) return;
+  const v = sheetDrag.v;
+  sheetDrag = null;
+  const h = dlg.getBoundingClientRect().height || 320;
+  const projected = sheetY + project(v);
+  if (projected > h * 0.3 || v > 700) {
+    closeSheet(v);
+  } else {
+    cancelSheetSpring = animateSpring({ from: sheetY, to: 0, velocity: v, damping: 1, response: 0.35, onUpdate: sheetSetY });
+  }
+}
+sheetGrabber.addEventListener('pointerup', endSheetDrag);
+sheetGrabber.addEventListener('pointercancel', endSheetDrag);
 
 /* ============================================================
    2b. Bienestar — "¿cómo notas la hinchazón hoy?"
@@ -414,11 +555,29 @@ function renderWellbeingInsight() {
   }
 }
 
+/* pastilla deslizante detrás de la pestaña activa (Semana/Mes/Año) */
+let rangePillX = 0, cancelRangePillSpring = null;
+function moveRangePill(btn, animate) {
+  const pill = $('#rangePill');
+  const cRect = $('#rangeTabs').getBoundingClientRect();
+  const bRect = btn.getBoundingClientRect();
+  if (!cRect.width) return; // la vista aún no es visible, nada que medir
+  const targetX = bRect.left - cRect.left;
+  pill.style.width = bRect.width + 'px';
+  if (!animate) { rangePillX = targetX; pill.style.transform = `translateX(${targetX}px)`; return; }
+  if (cancelRangePillSpring) cancelRangePillSpring();
+  cancelRangePillSpring = animateSpring({
+    from: rangePillX, to: targetX, damping: 1, response: 0.32,
+    onUpdate: x => { rangePillX = x; pill.style.transform = `translateX(${x}px)`; },
+  });
+}
+
 $('#rangeTabs').addEventListener('click', e => {
   const btn = e.target.closest('button');
   if (!btn) return;
   $$('#rangeTabs button').forEach(b => b.classList.toggle('is-active', b === btn));
   currentRange = btn.dataset.range;
+  moveRangePill(btn, true);
   renderHistory();
 });
 
@@ -623,7 +782,10 @@ $('.tabbar').addEventListener('click', e => {
   const view = btn.dataset.view;
   $$('.tabbar button').forEach(b => b.classList.toggle('is-active', b === btn));
   $$('.view').forEach(v => v.classList.toggle('is-active', v.id === `view-${view}`));
-  if (view === 'history') renderHistory();
+  if (view === 'history') {
+    moveRangePill($('#rangeTabs button.is-active'), false);
+    renderHistory();
+  }
   window.scrollTo(0, 0);
 });
 
