@@ -857,12 +857,9 @@ async function boot() {
     else { renderToday(); }
   }, 60000);
 
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) { setDateLabel(); renderAll(); }
-  });
-
   // service worker (PWA offline). Si entra una versión nueva, la pestaña
   // abierta se recarga sola una vez para dejar de ver la versión vieja.
+  let swReg = null;
   if ('serviceWorker' in navigator) {
     let reloadedForUpdate = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -871,9 +868,18 @@ async function boot() {
       location.reload();
     });
     navigator.serviceWorker.register('sw.js').then(reg => {
+      swReg = reg;
       reg.update().catch(() => {});
     }).catch(() => {});
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      setDateLabel();
+      renderAll();
+      if (swReg) swReg.update().catch(() => {}); // revisa si hay versión nueva cada vez que vuelves a la app
+    }
+  });
 }
 
 boot();
